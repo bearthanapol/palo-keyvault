@@ -1,0 +1,4 @@
+IP Address,Username,Password
+192.168.1.100,admin,secret123
+10.0.0.5,paloalto,Palo@123
+172.16.0.1,firewall_admin,ChangeMe!

@@ -136,14 +136,55 @@
                         <h3>Available Devices</h3>
                         <p>Devices registered in the vault</p>
                     </div>
-                    <button class="btn btn-add-device" id="addDeviceBtn">
-                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                stroke-linejoin="round" />
-                        </svg>
-                        Add Device
-                    </button>
+                    <div class="header-buttons">
+                        <button class="btn btn-secondary" id="importCsvBtn">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15M7 10L12 15M12 15L17 10M12 15V3"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Import CSV
+                        </button>
+                        <button class="btn btn-add-device" id="addDeviceBtn">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Add Device
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Devices Toolbar -->
+                <div class="devices-toolbar">
+                    <div class="search-wrapper">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2" />
+                            <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                        </svg>
+                        <input type="text" id="deviceSearch" placeholder="Search devices...">
+                    </div>
+
+                    <div class="selection-controls">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="selectAllCheckbox">
+                            <span class="checkmark"></span>
+                            Select All
+                        </label>
+                        <button class="btn btn-danger-outline" id="deleteSelectedBtn" style="display: none;">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19ZM8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Delete Selected
+                        </button>
+                    </div>
+                </div>
+
                 <div class="card-body">
                     <div class="devices-grid" id="devicesGrid">
                         <div class="loading-spinner">
@@ -153,6 +194,9 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Hidden File Input -->
+            <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
         </main>
 
         <!-- Footer -->
