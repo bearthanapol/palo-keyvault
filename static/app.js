@@ -57,16 +57,15 @@ const elements = {
     newDevicePassword: document.getElementById('newDevicePassword'),
     // New Elements
     deviceSearch: document.getElementById('deviceSearch'),
-    selectAllCheckbox: document.getElementById('selectAllCheckbox'),
     deleteSelectedBtn: document.getElementById('deleteSelectedBtn'),
     importCsvBtn: document.getElementById('importCsvBtn'),
+    exampleCsvBtn: document.getElementById('exampleCsvBtn'),
     csvFileInput: document.getElementById('csvFileInput')
 };
 
 // ===== State Management =====
 let currentApiKey = null;
 let currentIp = null;
-let selectedDevices = new Set();
 let filteredDevices = [...AVAILABLE_DEVICES];
 
 // ===== Initialization =====
@@ -79,6 +78,7 @@ function initializeApp() {
     populateQuickSelect();
     renderDevices();
     checkServerStatus();
+    updateDeleteAllButton(); // Initialize button state
 }
 
 // ===== Event Listeners =====
@@ -96,9 +96,9 @@ function setupEventListeners() {
 
     // New Event Listeners
     elements.deviceSearch.addEventListener('input', handleSearch);
-    elements.selectAllCheckbox.addEventListener('change', handleSelectAll);
-    elements.deleteSelectedBtn.addEventListener('click', handleDeleteSelected);
+    elements.deleteSelectedBtn.addEventListener('click', handleDeleteAllFiltered);
     elements.importCsvBtn.addEventListener('click', () => elements.csvFileInput.click());
+    elements.exampleCsvBtn.addEventListener('click', downloadExampleCsv);
     elements.csvFileInput.addEventListener('change', handleImportCSV);
 
     // Close dropdown when clicking outside
@@ -168,50 +168,18 @@ function handleSearch(e) {
         );
     }
 
-    // Reset selection when filtering
-    selectedDevices.clear();
-    updateSelectionUI();
     renderDevices();
+    updateDeleteAllButton();
 }
 
-// ===== Selection Logic =====
-function handleSelectAll(e) {
-    const isChecked = e.target.checked;
-
-    if (isChecked) {
-        filteredDevices.forEach(device => selectedDevices.add(device.ip));
-    } else {
-        selectedDevices.clear();
-    }
-
-    updateSelectionUI();
-    renderDevices();
-}
-
-function toggleDeviceSelection(ip) {
-    if (selectedDevices.has(ip)) {
-        selectedDevices.delete(ip);
-    } else {
-        selectedDevices.add(ip);
-    }
-
-    updateSelectionUI();
-    renderDevices();
-}
-
-function updateSelectionUI() {
-    // Update Select All checkbox state
-    const allSelected = filteredDevices.length > 0 && filteredDevices.every(d => selectedDevices.has(d.ip));
-    elements.selectAllCheckbox.checked = allSelected;
-
-    // Update Delete Selected button visibility
-    if (selectedDevices.size > 0) {
+function updateDeleteAllButton() {
+    if (filteredDevices.length > 0) {
         elements.deleteSelectedBtn.style.display = 'flex';
         elements.deleteSelectedBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 6H5H21M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19ZM8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
-            Delete Selected (${selectedDevices.size})
+            Delete All Filtered (${filteredDevices.length})
         `;
     } else {
         elements.deleteSelectedBtn.style.display = 'none';
@@ -219,41 +187,53 @@ function updateSelectionUI() {
 }
 
 // ===== Bulk Delete =====
-function handleDeleteSelected() {
-    if (selectedDevices.size === 0) return;
+function handleDeleteAllFiltered() {
+    if (filteredDevices.length === 0) return;
 
-    const confirmed = confirm(`Are you sure you want to delete ${selectedDevices.size} selected device(s)?\n\nThis action cannot be undone.`);
+    const confirmed = confirm(`Are you sure you want to delete ALL ${filteredDevices.length} filtered device(s)?\n\nThis action cannot be undone.`);
 
     if (!confirmed) return;
 
-    // Remove selected devices
-    const ipsToDelete = Array.from(selectedDevices);
+    // Remove filtered devices from AVAILABLE_DEVICES
+    // We create a Set of IPs to remove for faster lookup
+    const ipsToRemove = new Set(filteredDevices.map(d => d.ip));
 
-    // Filter out deleted devices from AVAILABLE_DEVICES
-    for (let i = AVAILABLE_DEVICES.length - 1; i >= 0; i--) {
-        if (selectedDevices.has(AVAILABLE_DEVICES[i].ip)) {
-            AVAILABLE_DEVICES.splice(i, 1);
-        }
-    }
+    // Filter out devices that are in the removal set
+    const newAvailable = AVAILABLE_DEVICES.filter(d => !ipsToRemove.has(d.ip));
 
-    // Update filtered list
-    const searchTerm = elements.deviceSearch.value.toLowerCase().trim();
-    if (!searchTerm) {
-        filteredDevices = [...AVAILABLE_DEVICES];
-    } else {
-        filteredDevices = AVAILABLE_DEVICES.filter(device =>
-            device.ip.toLowerCase().includes(searchTerm) ||
-            device.username.toLowerCase().includes(searchTerm)
-        );
-    }
+    // Clear the array and push remaining items
+    AVAILABLE_DEVICES.length = 0;
+    AVAILABLE_DEVICES.push(...newAvailable);
 
-    // Clear selection
-    selectedDevices.clear();
-    updateSelectionUI();
+    // Update filtered list (should be empty now if we deleted all filtered)
+    filteredDevices = [];
+
+    // Update UI
     renderDevices();
     populateQuickSelect();
+    updateDeleteAllButton();
 
-    showToast(`Deleted ${ipsToDelete.length} devices successfully`, 'success');
+    showToast(`Deleted ${ipsToRemove.size} devices successfully`, 'success');
+}
+
+// ===== Example CSV =====
+function downloadExampleCsv() {
+    const content = `IP Address,Username,Password
+192.168.1.100,admin,secret123
+10.0.0.5,paloalto,Palo@123
+172.16.0.1,firewall_admin,ChangeMe!`;
+
+    const blob = new Blob([content], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'example_devices.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Example CSV downloaded', 'info');
 }
 
 // ===== CSV Import =====
@@ -274,6 +254,7 @@ async function handleImportCSV(e) {
                 elements.deviceSearch.value = ''; // Clear search
                 renderDevices();
                 populateQuickSelect();
+                updateDeleteAllButton();
 
                 showToast(`Successfully imported ${result.added} devices!`, 'success');
                 if (result.errors.length > 0) {
@@ -464,16 +445,8 @@ function renderDevices() {
         return;
     }
 
-    elements.devicesGrid.innerHTML = filteredDevices.map(device => {
-        const isSelected = selectedDevices.has(device.ip);
-        return `
-        <div class="device-item ${isSelected ? 'selected' : ''}" data-ip="${device.ip}">
-            <div class="device-checkbox">
-                <label class="checkbox-wrapper" onclick="event.stopPropagation()">
-                    <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleDeviceSelection('${device.ip}')">
-                    <span class="checkmark"></span>
-                </label>
-            </div>
+    elements.devicesGrid.innerHTML = filteredDevices.map(device => `
+        <div class="device-item" data-ip="${device.ip}">
             <div class="device-content">
                 <div class="device-ip">${device.ip}</div>
                 <div class="device-user">${device.username}</div>
@@ -485,23 +458,18 @@ function renderDevices() {
                 </svg>
             </button>
         </div>
-    `}).join('');
+    `).join('');
 
     // Add click handlers for selecting devices (click on card body)
     elements.devicesGrid.querySelectorAll('.device-item').forEach(item => {
         const deviceContent = item.querySelector('.device-content');
         deviceContent.addEventListener('click', () => {
             const ip = item.dataset.ip;
-            // If clicking content, we can either select for key generation OR toggle selection
-            // Let's keep existing behavior: populate form
             elements.ipInput.value = ip;
             elements.ipInput.focus();
             window.scrollTo({ top: 0, behavior: 'smooth' });
             showToast(`Selected ${ip} for key generation`, 'info');
         });
-
-        // Make the whole card clickable for selection if clicking outside content/checkbox?
-        // No, let's keep it specific to avoid confusion.
     });
 
     // Add click handlers for delete buttons
@@ -512,6 +480,9 @@ function renderDevices() {
             handleDeleteDevice(ip);
         });
     });
+
+    // Update the "Delete All" button visibility
+    updateDeleteAllButton();
 }
 
 // ===== Server Status Check =====
