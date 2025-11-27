@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyVault - Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ===== CSS Variables ===== */
+        :root {
+            --color-bg-primary: #0a0e1a;
+            --color-bg-secondary: #131825;
+            --color-bg-tertiary: #1a2030;
+            --color-bg-card: rgba(26, 32, 48, 0.6);
+
+            --color-primary: #6366f1;
+            --color-primary-light: #818cf8;
+            --color-primary-dark: #4f46e5;
+            --color-success: #10b981;
+            --color-error: #ef4444;
+
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #cbd5e1;
+            --color-text-tertiary: #94a3b8;
+            --color-text-muted: #64748b;
+
+            --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.4);
+
+            --spacing-xs: 0.5rem;
+            --spacing-sm: 0.75rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+
+            --transition-base: 250ms ease;
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            animation: backgroundPulse 15s ease-in-out infinite;
+        }
+
+        @keyframes backgroundPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: var(--spacing-xl);
+        }
+
+        .login-card {
+            background: var(--color-bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-xl);
+            padding: var(--spacing-xl);
+            box-shadow: var(--shadow-xl);
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--color-primary);
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .login-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .login-header p {
+            font-size: 0.875rem;
+            color: var(--color-text-tertiary);
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-lg);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: var(--spacing-md);
+            width: 20px;
+            height: 20px;
+            color: var(--color-text-muted);
+            pointer-events: none;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: var(--spacing-md) var(--spacing-md) var(--spacing-md) 3rem;
+            background: var(--color-bg-secondary);
+            border: 2px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            color: var(--color-text-primary);
+            font-size: 1rem;
+            font-family: var(--font-family);
+            transition: all var(--transition-base);
+        }
+
+        input[type="password"]:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        input[type="password"]::placeholder {
+            color: var(--color-text-muted);
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md) var(--spacing-xl);
+            border: none;
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: var(--font-family);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            position: relative;
+            overflow: hidden;
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn.loading .btn-text {
+            opacity: 0;
+        }
+
+        .btn.loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            display: none;
+            padding: var(--spacing-md);
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: var(--radius-lg);
+            color: var(--color-error);
+            font-size: 0.875rem;
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        @keyframes shake {
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            25% {
+                transform: translateX(-10px);
+            }
+
+            75% {
+                transform: translateX(10px);
+            }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: var(--spacing-xl);
+            color: var(--color-text-muted);
+            font-size: 0.75rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                padding: var(--spacing-md);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <h1>KeyVault</h1>
+            </div>
+
+            <div class="login-header">
+                <h2>Secure Access</h2>
+                <p>Enter your password to access the vault</p>
+            </div>
+
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <svg class="input-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor" stroke-width="2" />
+                            <path d="M7 11V7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7V11"
+                                stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <input type="password" id="password" name="password" placeholder="Enter password" required
+                            autocomplete="current-password">
+                    </div>
+                </div>
+
+                <div class="error-message" id="errorMessage">
+                    ✗ Incorrect password. Please try again.
+                </div>
+
+                <button type="submit" class="btn" id="loginBtn">
+                    <span class="btn-text">Access KeyVault</span>
+                </button>
+            </form>
+
+            <div class="footer">
+                &copy; 2025 KeyVault. Secure credential management.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const CORRECT_PASSWORD = 'supp0rt@PS';
+        const SESSION_KEY = 'keyvault_authenticated';
+
+        // Check if already authenticated
+        if (sessionStorage.getItem(SESSION_KEY) === 'true') {
+            window.location.href = '/app';
+        }
+
+        const loginForm = document.getElementById('loginForm');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const password = passwordInput.value;
+
+            // Hide previous error
+            errorMessage.classList.remove('show');
+
+            // Set loading state
+            loginBtn.disabled = true;
+            loginBtn.classList.add('loading');
+
+            // Simulate a small delay for better UX
+            setTimeout(() => {
+                if (password === CORRECT_PASSWORD) {
+                    // Store authentication in session
+                    sessionStorage.setItem(SESSION_KEY, 'true');
+
+                    // Redirect to main app
+                    window.location.href = '/app';
+                } else {
+                    // Show error
+                    errorMessage.classList.add('show');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+
+                    // Reset button state
+                    loginBtn.disabled = false;
+                    loginBtn.classList.remove('loading');
+                }
+            }, 500);
+        });
+
+        // Focus password input on load
+        passwordInput.focus();
+    </script>
+</body>
+
+</html>

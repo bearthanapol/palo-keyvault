@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: keyvault
+    env: docker
+    plan: free
+    branch: main
+    repo: https://github.com/bearthanapol/palo-keyvault
+    envVars:
+      - key: PORT
+        value: 10000
+    healthCheckPath: /health

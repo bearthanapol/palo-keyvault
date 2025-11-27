@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyVault - Secure API Key Management</title>
+    <meta name="description"
+        content="Secure credential vault service for Palo Alto Networks devices. Generate and manage API keys with ease.">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <h1>KeyVault</h1>
+            </div>
+            <div class="status-badge" id="serverStatus">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking...</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Section -->
+            <section class="hero">
+                <h2 class="hero-title">Secure API Key Management</h2>
+                <p class="hero-subtitle">Generate API keys for your Palo Alto Networks devices instantly</p>
+            </section>
+
+            <!-- Key Generator Card -->
+            <section class="card generator-card">
+                <div class="card-header">
+                    <h3>Generate API Key</h3>
+                    <p>Enter a device IP address to retrieve its API key</p>
+                </div>
+                <div class="card-body">
+                    <form id="keygenForm" class="keygen-form">
+                        <div class="form-group">
+                            <label for="ipAddress">Device IP Address</label>
+                            <div class="input-wrapper">
+                                <svg class="input-icon" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                                    <path d="M12 6V12L16 14" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" />
+                                </svg>
+                                <input type="text" id="ipAddress" name="ipAddress" placeholder="e.g., 13.214.235.85"
+                                    pattern="^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$" required>
+                                <button type="button" class="quick-select-btn" id="quickSelectBtn">
+                                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="quick-select-dropdown" id="quickSelectDropdown"></div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="generateBtn">
+                            <span class="btn-text">Generate API Key</span>
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Result Card -->
+            <section class="card result-card" id="resultCard" style="display: none;">
+                <div class="card-header">
+                    <h3>API Key Result</h3>
+                    <button class="close-btn" id="closeResultBtn">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="result-status" id="resultStatus"></div>
+                    <div class="result-content" id="resultContent"></div>
+                    <div class="result-actions" id="resultActions" style="display: none;">
+                        <button class="btn btn-secondary" id="copyBtn">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor"
+                                    stroke-width="2" />
+                                <path
+                                    d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5"
+                                    stroke="currentColor" stroke-width="2" />
+                            </svg>
+                            Copy Key
+                        </button>
+                        <button class="btn btn-secondary" id="downloadBtn">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M21 15V19C21 20.1046 20.1046 21 19 21H5C3.89543 21 3 20.1046 3 19V15M7 10L12 15M12 15L17 10M12 15V3"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Download
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Available Devices Card -->
+            <section class="card devices-card">
+                <div class="card-header">
+                    <h3>Available Devices</h3>
+                    <p>Devices registered in the vault</p>
+                </div>
+                <div class="card-body">
+                    <div class="devices-grid" id="devicesGrid">
+                        <div class="loading-spinner">
+                            <div class="spinner"></div>
+                            <p>Loading devices...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 KeyVault. Secure credential management for Palo Alto Networks.</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>
