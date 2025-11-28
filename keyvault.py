@@ -194,6 +194,42 @@ def add_device(device: Device):
     
     return {"status": "success", "message": f"Device {device.ip} added to vault"}
 
+@app.post("/bulk-add-devices")
+def bulk_add_devices(devices: list[Device]):
+    """
+    Add multiple devices to the credential vault at once.
+    Returns summary of successful and failed additions.
+    """
+    added = []
+    errors = []
+    
+    for device in devices:
+        try:
+            # Validate IP
+            ipaddress.ip_address(device.ip)
+            
+            # Check if already exists
+            if device.ip in IP_CREDENTIALS:
+                errors.append({"ip": device.ip, "error": "Device already exists"})
+            else:
+                IP_CREDENTIALS[device.ip] = (device.username, device.password)
+                added.append(device.ip)
+        except ValueError:
+            errors.append({"ip": device.ip, "error": "Invalid IP address"})
+        except Exception as e:
+            errors.append({"ip": device.ip, "error": str(e)})
+    
+    # Save once after all additions
+    if added:
+        save_data(IP_CREDENTIALS)
+    
+    return {
+        "status": "success",
+        "added": len(added),
+        "failed": len(errors),
+        "errors": errors
+    }
+
 @app.delete("/delete-device/{ip_address}")
 def delete_device(ip_address: str):
     """

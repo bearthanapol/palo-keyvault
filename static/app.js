@@ -257,27 +257,47 @@ async function handleImportCSV(e) {
             const result = parseCSV(text);
 
             if (result.added > 0) {
-                // Send devices to backend
-                let backendSuccessCount = 0;
-                for (const device of result.devices) {
-                    try {
-                        await addDeviceToBackend(device);
-                        backendSuccessCount++;
-                    } catch (err) {
-                        console.error(`Failed to add device ${device.ip} to backend:`, err);
-                    }
+                // Show progress indicator for large imports
+                if (result.devices.length > 10) {
+                    showToast(`Uploading ${result.devices.length} devices...`, 'info');
                 }
 
-                // Update UI
-                filteredDevices = [...AVAILABLE_DEVICES];
-                elements.deviceSearch.value = ''; // Clear search
-                renderDevices();
-                populateQuickSelect();
-                updateDeleteAllButton();
+                // Send all devices to backend in one request
+                try {
+                    const response = await fetch(`${API_BASE_URL}/bulk-add-devices`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(result.devices)
+                    });
 
-                showToast(`Successfully imported ${result.added} devices!`, 'success');
+                    if (!response.ok) {
+                        throw new Error(`Backend error: ${response.statusText}`);
+                    }
+
+                    const backendResult = await response.json();
+
+                    // Refresh device list from backend
+                    await fetchDevices();
+
+                    // Show results
+                    if (backendResult.added > 0) {
+                        showToast(`Successfully imported ${backendResult.added} devices!`, 'success');
+                    }
+
+                    if (backendResult.failed > 0) {
+                        console.warn('Backend import errors:', backendResult.errors);
+                        setTimeout(() => showToast(`${backendResult.failed} devices failed (check console)`, 'warning'), 3000);
+                    }
+
+                } catch (err) {
+                    console.error('Failed to upload devices to backend:', err);
+                    showToast('Failed to sync with backend', 'error');
+                }
+
                 if (result.errors.length > 0) {
-                    console.warn('Import errors:', result.errors);
+                    console.warn('CSV parsing errors:', result.errors);
                     setTimeout(() => showToast(`Skipped ${result.errors.length} invalid rows (check console)`, 'warning'), 3000);
                 }
             } else {
@@ -320,14 +340,10 @@ function parseCSV(text) {
             const password = parts[2];
 
             if (validateIpAddress(ip) && username && password) {
-                // Check duplicate
-                if (!AVAILABLE_DEVICES.some(d => d.ip === ip)) {
-                    AVAILABLE_DEVICES.push({ ip, username, password });
-                    newDevices.push({ ip, username, password });
-                    addedCount++;
-                } else {
-                    errors.push(`Line ${i + 1}: Duplicate IP ${ip}`);
-                }
+                // Just collect valid devices, don't check for duplicates here
+                // Backend will handle duplicate checking
+                newDevices.push({ ip, username, password });
+                addedCount++;
             } else {
                 errors.push(`Line ${i + 1}: Invalid format`);
             }
