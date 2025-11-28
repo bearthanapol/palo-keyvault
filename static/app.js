@@ -243,12 +243,23 @@ async function handleImportCSV(e) {
 
     const reader = new FileReader();
 
-    reader.onload = function (event) {
+    reader.onload = async function (event) {
         const text = event.target.result;
         try {
             const result = parseCSV(text);
 
             if (result.added > 0) {
+                // Send devices to backend
+                let backendSuccessCount = 0;
+                for (const device of result.devices) {
+                    try {
+                        await addDeviceToBackend(device);
+                        backendSuccessCount++;
+                    } catch (err) {
+                        console.error(`Failed to add device ${device.ip} to backend:`, err);
+                    }
+                }
+
                 // Update UI
                 filteredDevices = [...AVAILABLE_DEVICES];
                 elements.deviceSearch.value = ''; // Clear search
@@ -280,6 +291,7 @@ function parseCSV(text) {
     const lines = text.split(/\r\n|\n/);
     let addedCount = 0;
     const errors = [];
+    const newDevices = [];
 
     // Skip header if it exists (simple check: if first line contains "IP")
     let startIndex = 0;
@@ -303,6 +315,7 @@ function parseCSV(text) {
                 // Check duplicate
                 if (!AVAILABLE_DEVICES.some(d => d.ip === ip)) {
                     AVAILABLE_DEVICES.push({ ip, username, password });
+                    newDevices.push({ ip, username, password });
                     addedCount++;
                 } else {
                     errors.push(`Line ${i + 1}: Duplicate IP ${ip}`);
@@ -313,7 +326,7 @@ function parseCSV(text) {
         }
     }
 
-    return { added: addedCount, errors };
+    return { added: addedCount, errors, devices: newDevices };
 }
 
 // ===== Form Handling =====
@@ -451,7 +464,7 @@ function renderDevices() {
                 <div class="device-ip">${device.ip}</div>
                 <div class="device-user">${device.username}</div>
             </div>
-            <button class="device-delete-btn" data-ip="${device.ip}" title="Delete device">
+            <button type="button" class="device-delete-btn" data-ip="${device.ip}" title="Delete device">
                 <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3 6H5H21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -589,12 +602,30 @@ async function handleAddDevice(e) {
     // Show success message
     showToast(`Device ${newDevice.ip} added successfully!`, 'success');
 
-    // Note: In a real application, you would send this to the backend
-    // For now, we're just adding it to the frontend list
-    console.log('New device added:', newDevice);
+    // Send to backend
+    try {
+        await addDeviceToBackend(newDevice);
+        console.log('New device added to backend:', newDevice);
+    } catch (error) {
+        console.error('Failed to add device to backend:', error);
+        showToast('Added locally, but failed to sync with backend', 'warning');
+    }
+}
 
-    // TODO: Send to backend
-    // await addDeviceToBackend(newDevice);
+async function addDeviceToBackend(device) {
+    const response = await fetch(`${API_BASE_URL}/add-device`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(device)
+    });
+
+    if (!response.ok) {
+        throw new Error(`Backend error: ${response.statusText}`);
+    }
+
+    return await response.json();
 }
 
 // ===== Delete Device =====
@@ -613,6 +644,12 @@ function handleDeleteDevice(ip) {
     if (index > -1) {
         AVAILABLE_DEVICES.splice(index, 1);
 
+        // Also remove from filteredDevices if present
+        const filteredIndex = filteredDevices.findIndex(d => d.ip === ip);
+        if (filteredIndex > -1) {
+            filteredDevices.splice(filteredIndex, 1);
+        }
+
         // Update UI
         renderDevices();
         populateQuickSelect();
@@ -620,13 +657,26 @@ function handleDeleteDevice(ip) {
         // Show success message
         showToast(`Device ${ip} deleted successfully`, 'success');
 
-        // Note: In a real application, you would send this to the backend
-        console.log('Device deleted:', ip);
-
-        // TODO: Send to backend
-        // await deleteDeviceFromBackend(ip);
+        // Send to backend
+        deleteDeviceFromBackend(ip).catch(err => {
+            console.error('Failed to delete from backend:', err);
+            showToast('Deleted locally, but failed to sync with backend', 'warning');
+        });
     }
 }
+
+async function deleteDeviceFromBackend(ip) {
+    const response = await fetch(`${API_BASE_URL}/delete-device/${ip}`, {
+        method: 'DELETE'
+    });
+
+    if (!response.ok) {
+        throw new Error(`Backend error: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
 
 // Check server status periodically
 setInterval(checkServerStatus, 30000); // Every 30 seconds

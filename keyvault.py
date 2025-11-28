@@ -131,6 +131,40 @@ def get_device_api_key(ip_address: str):
         print(f"Connection failed: {e}")
         raise HTTPException(status_code=502, detail=f"Failed to connect to device: {str(e)}")
 
+from pydantic import BaseModel
+
+class Device(BaseModel):
+    ip: str
+    username: str
+    password: str
+
+@app.post("/add-device")
+def add_device(device: Device):
+    """
+    Add a new device to the in-memory credential vault.
+    """
+    # Validate IP
+    try:
+        ipaddress.ip_address(device.ip)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid IP address format")
+    
+    # Add to credentials
+    IP_CREDENTIALS[device.ip] = (device.username, device.password)
+    
+    return {"status": "success", "message": f"Device {device.ip} added to vault"}
+
+@app.delete("/delete-device/{ip_address}")
+def delete_device(ip_address: str):
+    """
+    Remove a device from the in-memory credential vault.
+    """
+    if ip_address in IP_CREDENTIALS:
+        del IP_CREDENTIALS[ip_address]
+        return {"status": "success", "message": f"Device {ip_address} deleted from vault"}
+    else:
+        raise HTTPException(status_code=404, detail="Device not found")
+
 if __name__ == "__main__":
     # Get port from environment variable or default to 8090
     port = int(os.getenv("PORT", 8090))
