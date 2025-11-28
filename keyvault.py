@@ -31,24 +31,63 @@ if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Mock database of credentials indexed by IP
-IP_CREDENTIALS = {
-    "13.214.235.85": ("paloalto",'supp0rt@PS'),
-    "4.119.3.115": ("jeremylee",'xD37J5mpC8d9s#Vr4u0A'),
-    "13.228.66.199": ("paloalto",'supp0rt@PS'),
-    "18.136.129.38": ("paloalto",'supp0rt@PS'),
-    "52.221.53.122": ("paloalto",'supp0rt@PS'),
-    "54.254.134.147": ("paloalto",'supp0rt@PS'),
-    "13.71.103.164": ("panzadmins",'Palo@123'),
-    "20.41.232.215": ("panzadmins",'Palo@123'),
-    "13.71.114.219": ("panzadmins",'Palo@123'),
-    "20.235.24.106": ("panzadmins",'Palo@123'),
-    "74.225.11.216": ("panzadmins",'Palo@123'),
-    "20.235.30.171": ("panzadmins",'Palo@123'), 
-    "20.41.237.8": ("panzadmins",'Palo@123'),
-    "74.225.25.53": ("panzadmins",'Palo@123'),
-    "13.71.101.227": ("panzadmins",'Palo@123'),
-    "20.41.234.91": ("panzadmins",'Palo@123')
-}
+import json
+
+# Data persistence file
+DATA_FILE = "devices.json"
+
+def load_data():
+    """Load devices from JSON file or return default defaults."""
+    defaults = {
+        "13.214.235.85": ("paloalto",'supp0rt@PS'),
+        "4.119.3.115": ("jeremylee",'xD37J5mpC8d9s#Vr4u0A'),
+        "13.228.66.199": ("paloalto",'supp0rt@PS'),
+        "18.136.129.38": ("paloalto",'supp0rt@PS'),
+        "52.221.53.122": ("paloalto",'supp0rt@PS'),
+        "54.254.134.147": ("paloalto",'supp0rt@PS'),
+        "13.71.103.164": ("panzadmins",'Palo@123'),
+        "20.41.232.215": ("panzadmins",'Palo@123'),
+        "13.71.114.219": ("panzadmins",'Palo@123'),
+        "20.235.24.106": ("panzadmins",'Palo@123'),
+        "74.225.11.216": ("panzadmins",'Palo@123'),
+        "20.235.30.171": ("panzadmins",'Palo@123'), 
+        "20.41.237.8": ("panzadmins",'Palo@123'),
+        "74.225.25.53": ("panzadmins",'Palo@123'),
+        "13.71.101.227": ("panzadmins",'Palo@123'),
+        "20.41.234.91": ("panzadmins",'Palo@123')
+    }
+    
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, 'r') as f:
+                data = json.load(f)
+                # Convert list [username, password] to tuple (username, password)
+                return {k: tuple(v) for k, v in data.items()}
+        except Exception as e:
+            print(f"Error loading data file: {e}")
+            return defaults
+    return defaults
+
+def save_data(data):
+    """Save devices to JSON file."""
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        print(f"Error saving data file: {e}")
+
+# Initialize credentials
+IP_CREDENTIALS = load_data()
+
+@app.get("/devices")
+def get_devices():
+    """
+    Return list of available devices (public info only).
+    """
+    return [
+        {"ip": ip, "username": creds[0]} 
+        for ip, creds in IP_CREDENTIALS.items()
+    ]
 
 @app.get("/", response_class=FileResponse)
 def serve_login_page():
@@ -151,6 +190,7 @@ def add_device(device: Device):
     
     # Add to credentials
     IP_CREDENTIALS[device.ip] = (device.username, device.password)
+    save_data(IP_CREDENTIALS)
     
     return {"status": "success", "message": f"Device {device.ip} added to vault"}
 
@@ -161,6 +201,7 @@ def delete_device(ip_address: str):
     """
     if ip_address in IP_CREDENTIALS:
         del IP_CREDENTIALS[ip_address]
+        save_data(IP_CREDENTIALS)
         return {"status": "success", "message": f"Device {ip_address} deleted from vault"}
     else:
         raise HTTPException(status_code=404, detail="Device not found")

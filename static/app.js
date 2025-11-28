@@ -10,24 +10,8 @@ if (sessionStorage.getItem(SESSION_KEY) !== 'true') {
 const API_BASE_URL = window.location.origin;
 
 // Available devices (synced with backend)
-const AVAILABLE_DEVICES = [
-    { ip: "13.214.235.85", username: "paloalto" },
-    { ip: "4.119.3.115", username: "jeremylee" },
-    { ip: "13.228.66.199", username: "paloalto" },
-    { ip: "18.136.129.38", username: "paloalto" },
-    { ip: "52.221.53.122", username: "paloalto" },
-    { ip: "54.254.134.147", username: "paloalto" },
-    { ip: "13.71.103.164", username: "panzadmins" },
-    { ip: "20.41.232.215", username: "panzadmins" },
-    { ip: "13.71.114.219", username: "panzadmins" },
-    { ip: "20.235.24.106", username: "panzadmins" },
-    { ip: "74.225.11.216", username: "panzadmins" },
-    { ip: "20.235.30.171", username: "panzadmins" },
-    { ip: "20.41.237.8", username: "panzadmins" },
-    { ip: "74.225.25.53", username: "panzadmins" },
-    { ip: "13.71.101.227", username: "panzadmins" },
-    { ip: "20.41.234.91", username: "panzadmins" }
-];
+// Available devices (synced with backend)
+const AVAILABLE_DEVICES = [];
 
 // ===== DOM Elements =====
 const elements = {
@@ -73,12 +57,36 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
 });
 
-function initializeApp() {
+async function initializeApp() {
     setupEventListeners();
-    populateQuickSelect();
-    renderDevices();
+    await fetchDevices(); // Fetch devices from backend
     checkServerStatus();
-    updateDeleteAllButton(); // Initialize button state
+}
+
+async function fetchDevices() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/devices`);
+        if (!response.ok) throw new Error('Failed to fetch devices');
+
+        const devices = await response.json();
+
+        // Clear and update AVAILABLE_DEVICES
+        AVAILABLE_DEVICES.length = 0;
+        AVAILABLE_DEVICES.push(...devices);
+
+        // Update UI
+        filteredDevices = [...AVAILABLE_DEVICES];
+        renderDevices();
+        populateQuickSelect();
+        updateDeleteAllButton();
+
+    } catch (error) {
+        console.error('Error fetching devices:', error);
+        showToast('Failed to load devices from server', 'error');
+
+        // Fallback to empty state or cached if needed
+        renderDevices();
+    }
 }
 
 // ===== Event Listeners =====
